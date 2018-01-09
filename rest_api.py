@@ -18,8 +18,8 @@ app.config['MONGO_URI'] = 'mongodb://admin:admin@ds247027.mlab.com:47027/sdc_tas
 mongo = PyMongo(app)
 
 # Api definition.
-api = Api(app, version='1.0', title='TodoMVC API',
-    description='A simple TodoMVC API',
+api = Api(app, version='1.0', title='Todo API',
+    description='A simple Todo API',
 )
 
 
@@ -27,7 +27,8 @@ ns = api.namespace('todos', description='TODO operations')
 
 todo = api.model('Todo', {
     '_id': fields.String(readOnly=True, description='The task unique identifier'),   
-    'task': fields.String(required=True, description='The task details')    
+    'task': fields.String(required=True, description='The task details'), 
+    'status': fields.Boolean(required=True, default=False, description='The task Status')
 })
 
 
@@ -48,7 +49,10 @@ class TodoDAO(object):
         todos = mongo.db.todos
         try:
             todo = todos.find_one({"_id": ObjectId(id)})
-            return todo
+            if todo:
+                return todo
+            
+            raise Exception("Todo doesn't exist")            
         except Exception as e:
             api.abort(404, "Todo doesn't exist")           
 
@@ -67,7 +71,8 @@ class TodoDAO(object):
         
         todo = self.get(id)
         try:            
-            todo['task'] = data['task']
+            # todo['task'] = data['task']
+            todo['status'] = data['status']            
             todo  = todos.update({"_id": ObjectId(id)}, todo)
             data['_id'] = id
             return data
@@ -79,7 +84,7 @@ class TodoDAO(object):
     def delete(self, id):
         todos = mongo.db.todos
         try:
-            todos.remove({"_id": ObjectId(id)})
+            todos.delete_one({"_id": ObjectId(id)})
         except Exception as e:
             api.abort(400, "Error in deleting Todo")
 
@@ -91,7 +96,7 @@ DAO = TodoDAO()
 class TodoList(Resource):
     '''Shows a list of all todos, and lets you POST to add new tasks'''
     @ns.doc('list_todos')
-    @ns.marshal_list_with(todo)
+    @ns.marshal_list_with(todo, envelope="data")
     def get(self):
         '''List all tasks'''
         return DAO.todos
