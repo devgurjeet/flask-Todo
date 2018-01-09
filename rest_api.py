@@ -9,6 +9,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 app.wsgi_app = ProxyFix(app.wsgi_app)
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 """app.config['MONGO_DBNAME'] = 'resttodos'
 app.config['MONGO_URI'] = 'mongodb://localhost:27017/resttodos'"""
