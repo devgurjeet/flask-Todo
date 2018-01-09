@@ -3,6 +3,7 @@ from flask_restplus import Resource, Api, fields
 from werkzeug.contrib.fixers import ProxyFix
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
+from flask_cors import CORS
 
 
 app = Flask(__name__)
@@ -103,7 +104,7 @@ class TodoList(Resource):
 
     @ns.doc('create_todo')
     @ns.expect(todo)
-    @ns.marshal_with(todo, code=201)
+    @ns.marshal_with(todo, code=201, envelope="data")
     def post(self):
         '''Create a new task'''
         return DAO.create(api.payload), 201
@@ -115,7 +116,7 @@ class TodoList(Resource):
 class Todo(Resource):
     '''Show a single todo item and lets you delete them'''
     @ns.doc('get_todo')
-    @ns.marshal_with(todo)
+    @ns.marshal_with(todo, envelope="data")
     def get(self, id):
         '''Fetch a given resource'''
         return DAO.get(id)
@@ -128,7 +129,7 @@ class Todo(Resource):
         return '', 204
 
     @ns.expect(todo)
-    @ns.marshal_with(todo)
+    @ns.marshal_with(todo, envelope="data")
     def put(self, id):
         '''Update a task given its identifier'''
         return DAO.update(id, api.payload)
